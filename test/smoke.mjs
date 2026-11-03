@@ -33,7 +33,7 @@ global.localStorage = {
   setItem: (k, v) => mem.set(k, String(v)),
   removeItem: (k) => mem.delete(k),
 };
-global.window = {};
+global.window = { addEventListener() {} };
 
 // 加载数据与脚本（按浏览器里的顺序）
 const dataSrc = fs.readFileSync(path.join(pub, "data", "game.data.js"), "utf8");
