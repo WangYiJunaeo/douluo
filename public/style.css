@@ -148,6 +148,14 @@ input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0
   padding:12px 14px;border-radius:10px;font-size:13px;line-height:1.65;margin-bottom:10px;word-break:break-word}
 :root[data-theme="mo"] .errbox{background:#fbeae6;border-color:#e2b6ae;color:#8c2f24}
 
+.keybanner{display:flex;align-items:center;gap:10px;padding:10px 14px;font-size:13px;
+  background:rgba(220,38,38,.14);border-bottom:1px solid rgba(220,38,38,.28);color:#fca5a5}
+.keybanner span{flex:1;line-height:1.5}
+.keybanner button{background:transparent;border:1px solid rgba(220,38,38,.5);border-radius:7px;
+  padding:6px 12px;color:#fca5a5;font-size:12px;white-space:nowrap}
+:root[data-theme="mo"] .keybanner{background:#fbeae6;border-color:#e2b6ae;color:#8c2f24}
+:root[data-theme="mo"] .keybanner button{border-color:#d89a90;color:#8c2f24}
+
 /* ---------- 弹层 ---------- */
 .sheet-mask{position:fixed;inset:0;background:var(--mask);backdrop-filter:blur(3px);z-index:40;animation:fadein .2s}
 @keyframes fadein{from{opacity:0}to{opacity:1}}
