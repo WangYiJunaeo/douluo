@@ -442,8 +442,12 @@
         '<div class="hint" style="margin-top:20px;text-align:center;line-height:1.9">' +
           '想打开得更快？浏览器菜单 →「添加到主屏幕」，<br>下次点图标直接进，没有地址栏。' +
         '</div>' +
-        '<div class="hint" style="margin-top:10px;text-align:center;opacity:.45;font-size:11px">build v5 · 2026-11-03</div>' +
+        (S.char ? '<button class="btn ghost" id="back2" style="width:100%;margin-top:16px">返回游戏（不修改 Key）</button>' : "") +
+        '<div class="hint" style="margin-top:10px;text-align:center;opacity:.45;font-size:11px">build v6 · 2026-11-03</div>' +
       '</div>';
+
+    var b2 = $("#back2");
+    if (b2) b2.onclick = function () { S.view = "game"; render(); };
 
     $("#go").onclick = function () {
       var k = $("#key").value.trim();
@@ -566,8 +570,10 @@
         '<button class="iconbtn" id="btnUndo" title="退回上一步">↺</button>' +
         '<button class="iconbtn" id="btnStatus">状态</button>' +
         '<button class="iconbtn" id="btnTheme">◐</button>' +
-        '<button class="iconbtn" id="btnSave">存档</button>' +
+        '<button class="iconbtn" id="btnSave">菜单</button>' +
       "</div>" +
+      (S.cfg.key ? "" :
+        '<div class="keybanner"><span>还没配置 API Key，剧情无法推进</span><button id="cfgNow">去配置</button></div>') +
       '<div class="desk"><div class="maincol">' +
         '<div class="story" id="story"></div>' +
         '<div class="choices" id="choices"></div>' +
@@ -587,6 +593,8 @@
       toast("主题：" + themeName(next));
     };
     $("#btnSave").onclick = function () { openSheet("save"); };
+    var cfgNow = $("#cfgNow");
+    if (cfgNow) cfgNow.onclick = function () { S.view = "setup"; render(); };
   }
 
   function renderSide() {
@@ -789,8 +797,9 @@
       sheet.innerHTML += side ? side.innerHTML : "";
     } else {
       sheet.innerHTML +=
-        "<h3>存档</h3>" +
+        "<h3>菜单</h3>" +
         '<div class="field"><label>界面主题</label>' + themeBarHtml() + "</div>" +
+        '<button class="btn ghost" id="rekey" style="width:100%;margin-bottom:9px">重新填写 API Key</button>' +
         '<div class="hint" style="margin-bottom:14px">进度自动保存在本机。换设备时可导出文本，在另一台导入。</div>' +
         '<button class="btn" id="exp" style="width:100%;margin-bottom:9px">导出进度</button>' +
         '<button class="btn ghost" id="imp" style="width:100%;margin-bottom:9px">导入进度</button>' +
@@ -802,6 +811,11 @@
     wireTheme(sheet);
 
     if (kind === "save") {
+      $("#rekey").onclick = function () {
+        closeSheet();
+        S.view = "setup";
+        render();
+      };
       $("#exp").onclick = function () {
         var txt = JSON.stringify(snapshot());
         sheet.innerHTML = '<div class="grab"></div><h3>复制下面这段</h3>' +
