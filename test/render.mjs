@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { createDocument } from "./minidom.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const pub = path.join(here, "..", "public");
+const pub = process.argv[2] ? path.resolve(process.argv[2]) : path.join(here, "..", "public");
 const indexHtml = fs.readFileSync(path.join(pub, "index.html"), "utf8");
 const bodyHtml = indexHtml.slice(indexHtml.indexOf("<body>") + 6, indexHtml.indexOf("</body>"));
 
@@ -118,6 +118,18 @@ ok("存档已写入 localStorage", mem.has("dl_save_v1"), [...mem.keys()].join("
 const snap = JSON.parse(mem.get("dl_save_v1"));
 ok("存档含角色", snap.char && snap.char.name === "阿尘", JSON.stringify(snap.char && snap.char.name));
 ok("存档含消息", Array.isArray(snap.entries) && snap.entries.length >= 3, "entries=" + (snap.entries || []).length);
+
+// ---- 菜单 → 重新配置 Key → 返回 ----
+doc.getElementById("btnSave").click();
+await tick();
+ok("菜单里有「重新填写 API Key」", !!doc.getElementById("rekey"));
+doc.getElementById("rekey").click();
+await tick();
+ok("能回到 Key 配置页", !!doc.getElementById("key"), app.innerHTML.slice(0, 120));
+ok("配置页有「返回游戏」", !!doc.getElementById("back2"));
+doc.getElementById("back2").click();
+await tick();
+ok("能从配置页返回游戏", !!doc.getElementById("story"));
 
 console.log(fails ? `\nFAIL (${fails})` : "\nPASS");
 process.exit(fails ? 1 : 0);
