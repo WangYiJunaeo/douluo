@@ -1,8 +1,7 @@
-// Service Worker：缓存应用外壳，让「从主屏幕打开」几乎瞬开
-const CACHE = "douluo-v6";
+// Service Worker：外壳离线可用，但 HTML 永远走网络优先（避免「改了没生效」）
+const CACHE = "douluo-v7";
 const ASSETS = [
   "./",
-  "./index.html",
   "./app.js",
   "./style.css",
   "./data/game.data.js",
@@ -30,11 +29,31 @@ self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET") return;
 
-  // 只接管本站资源；DeepSeek 的 API 请求一律直连，绝不缓存
   let url;
   try { url = new URL(req.url); } catch { return; }
-  if (url.origin !== self.location.origin) return;
+  if (url.origin !== self.location.origin) return; // DeepSeek 请求一律直连
 
+  const isHTML =
+    req.mode === "navigate" ||
+    (req.headers.get("accept") || "").includes("text/html");
+
+  // 页面本身：网络优先，拿不到才回落到缓存
+  if (isHTML) {
+    e.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res && res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(req, copy));
+          }
+          return res;
+        })
+        .catch(() => caches.match(req).then((hit) => hit || caches.match("./index.html")))
+    );
+    return;
+  }
+
+  // 其它资源：先给缓存，同时后台更新
   e.respondWith(
     caches.match(req).then((hit) => {
       const network = fetch(req)
@@ -45,7 +64,7 @@ self.addEventListener("fetch", (e) => {
           }
           return res;
         })
-        .catch(() => hit || caches.match("./index.html"));
+        .catch(() => hit);
       return hit || network;
     })
   );
