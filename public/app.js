@@ -498,6 +498,7 @@
       '<div class="topbar">' +
         '<div class="ch"><div class="t" id="chTitle">' + esc(S.status.goal || "第一章") + "</div>" +
           '<div class="s" id="chTime">' + esc(S.status.time || eraName(c.era)) + "　·　" + esc(c.name) + "</div></div>" +
+        '<button class="iconbtn" id="btnUndo" title="退回上一步">↺</button>' +
         '<button class="iconbtn" id="btnStatus">状态</button>' +
         '<button class="iconbtn" id="btnTheme">◐</button>' +
         '<button class="iconbtn" id="btnSave">存档</button>' +
@@ -513,6 +514,7 @@
     renderChoices();
 
     $("#btnStatus").onclick = function () { openSheet("status"); };
+    $("#btnUndo").onclick = rewind;
     $("#btnTheme").onclick = function () {
       var ids = THEMES.map(function (t) { return t.id; });
       var next = ids[(ids.indexOf(S.theme) + 1) % ids.length];
@@ -585,8 +587,25 @@
     var box = $("#choices");
     if (!box) return;
     if (S.loading) { box.innerHTML = ""; return; }
+
+    if (S.error) {
+      box.innerHTML =
+        '<div class="errbox">' + esc(S.error) + "</div>" +
+        '<button class="choice" id="retry"><span class="n">›</span>重试这一步</button>' +
+        '<button class="choice" id="skip"><span class="n">›</span>跳过这条报错，继续</button>';
+      $("#retry").onclick = retryStep;
+      $("#skip").onclick = function () {
+        S.error = null; S.choices = ["继续"];
+        renderStory(); renderChoices();
+      };
+      return;
+    }
+
     if (S.char && S.char.dead) {
-      box.innerHTML = '<button class="choice" id="again"><span class="n">✦</span>这一世结束了 · 重新开始</button>';
+      box.innerHTML =
+        '<button class="choice" id="rollback"><span class="n">↺</span>回到死亡之前</button>' +
+        '<button class="choice" id="again"><span class="n">✦</span>这一世结束了 · 重新开始</button>';
+      $("#rollback").onclick = rewind;
       $("#again").onclick = function () {
         store(LS_SAVE, null); S.char = null; draft = null; S.view = "create"; render();
       };
@@ -615,6 +634,10 @@
   function ask() {
     if (S.loading) return;
     S.loading = true; S.stream = ""; S.error = null;
+    // 存档点：失败或结果不满意时，可以退回这一步之前
+    S.undo = JSON.parse(JSON.stringify({
+      entries: S.entries, choices: S.choices, status: S.status, npcs: S.npcs, char: S.char
+    }));
     renderStory(); renderChoices();
 
     chat(function (full) {
@@ -631,10 +654,27 @@
       renderStory(); renderChoices(); renderSide(); updateTop();
     }).catch(function (e) {
       S.loading = false; S.stream = "";
-      S.error = e.message || String(e);
-      toast(S.error);
+      S.error = (e && e.message) || String(e);
       renderStory(); renderChoices();
     });
+  }
+
+  // 退回上一个存档点（丢弃这一段回复与它带来的所有数值变化）
+  function rewind() {
+    if (S.loading) return;
+    if (!S.undo) { toast("没有可退回的步骤"); return; }
+    var u = JSON.parse(JSON.stringify(S.undo));
+    S.entries = u.entries; S.choices = u.choices;
+    S.status = u.status; S.npcs = u.npcs; S.char = u.char;
+    S.error = null; S.stream = "";
+    renderStory(); renderChoices(); renderSide(); updateTop();
+    toast("已退回上一步");
+  }
+
+  function retryStep() {
+    S.error = null;
+    renderStory(); renderChoices();
+    ask();
   }
 
   function updateTop() {
