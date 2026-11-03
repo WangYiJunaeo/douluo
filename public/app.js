@@ -18,6 +18,34 @@
     { id: "ye", name: "夜" }
   ];
 
+  // PWA 安装提示（Chrome/Edge 会触发 beforeinstallprompt）
+  var installPrompt = null;
+  if (window.addEventListener) {
+    window.addEventListener("beforeinstallprompt", function (e) {
+      e.preventDefault();
+      installPrompt = e;
+      if (S.view === "setup" || S.view === "create") render();
+    });
+    window.addEventListener("appinstalled", function () {
+      installPrompt = null;
+      toast("已安装到主屏幕");
+    });
+  }
+  function installHtml() {
+    if (!installPrompt) return "";
+    return '<button class="btn ghost" id="install" style="width:100%;margin-top:12px">安装到桌面 / 主屏幕</button>';
+  }
+  function wireInstall() {
+    var b = $("#install");
+    if (!b || !installPrompt) return;
+    b.onclick = function () {
+      var p = installPrompt;
+      installPrompt = null;
+      p.prompt();
+      if (p.userChoice) p.userChoice.then(function () { render(); });
+    };
+  }
+
   function applyTheme(id) {
     var t = THEMES.some(function (x) { return x.id === id; }) ? id : "jin";
     S.theme = t;
@@ -409,8 +437,12 @@
           '<div class="hint" style="margin-bottom:16px">Key 只保存在本机浏览器，不会上传到任何第三方。建议单独申请一个低额度 Key 专门用于此游戏。</div>' +
           '<div id="err" class="err" style="margin-bottom:12px"></div>' +
           '<button class="btn" id="go" style="width:100%">保存并继续</button>' +
+          installHtml() +
         '</div>' +
-        '<div class="hint" style="margin-top:22px;text-align:center;opacity:.5;font-size:11px">build v4 · 2026-11-03</div>' +
+        '<div class="hint" style="margin-top:20px;text-align:center;line-height:1.9">' +
+          '想打开得更快？浏览器菜单 →「添加到主屏幕」，<br>下次点图标直接进，没有地址栏。' +
+        '</div>' +
+        '<div class="hint" style="margin-top:10px;text-align:center;opacity:.45;font-size:11px">build v5 · 2026-11-03</div>' +
       '</div>';
 
     $("#go").onclick = function () {
@@ -427,6 +459,7 @@
       else { S.view = "create"; render(); }
     };
     wireTheme(document);
+    wireInstall();
   }
 
   function soulPool(era) { return (D.MARTIAL_SOULS_BY_ERA || {})[era] || []; }
