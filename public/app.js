@@ -348,12 +348,43 @@
   /* ---------------- 渲染 ---------------- */
   var root;
 
+  // 兜底：任何未捕获异常都直接在页面上说清楚，而不是留一片空白
+  function fatal(err) {
+    try {
+      var body = document.body;
+      body.innerHTML = "";
+      var wrap = document.createElement("div");
+      wrap.style.cssText = "padding:28px 20px;font-family:ui-monospace,Consolas,monospace;color:#fca5a5;" +
+        "background:#160b0b;min-height:100vh;box-sizing:border-box;line-height:1.6";
+      var h = document.createElement("div");
+      h.textContent = "界面出错了";
+      h.style.cssText = "font-size:18px;margin-bottom:14px;color:#fff";
+      var msg = document.createElement("pre");
+      msg.style.cssText = "white-space:pre-wrap;word-break:break-word;font-size:12px;background:#241010;" +
+        "padding:14px;border-radius:8px;border:1px solid #5b2020;max-height:52vh;overflow:auto";
+      msg.textContent = (err && (err.stack || err.message)) || String(err);
+      var btn = document.createElement("button");
+      btn.textContent = "清除本机数据并重来";
+      btn.style.cssText = "margin-top:18px;padding:12px 18px;border-radius:8px;border:1px solid #5b2020;" +
+        "background:transparent;color:#fca5a5;font-size:14px";
+      btn.onclick = function () { try { localStorage.clear(); } catch (e) {} location.reload(); };
+      wrap.appendChild(h); wrap.appendChild(msg); wrap.appendChild(btn);
+      body.appendChild(wrap);
+    } catch (e) {
+      document.body.textContent = "界面出错了：" + ((err && err.message) || err);
+    }
+  }
+  window.addEventListener("error", function (e) { fatal(e.error || e.message); });
+  window.addEventListener("unhandledrejection", function (e) { fatal(e.reason); });
+
   function render() {
-    root = $("#app");
-    if (S.view === "boot") { root.innerHTML = '<div class="boot">正在唤醒魂力……</div>'; return; }
-    if (S.view === "setup") return renderSetup();
-    if (S.view === "create") return renderCreate();
-    if (S.view === "game") return renderGame();
+    try {
+      root = $("#app");
+      if (S.view === "boot") { root.innerHTML = '<div class="boot">正在唤醒魂力……</div>'; return; }
+      if (S.view === "setup") return renderSetup();
+      if (S.view === "create") return renderCreate();
+      if (S.view === "game") return renderGame();
+    } catch (e) { fatal(e); }
   }
 
   function renderSetup() {
@@ -379,6 +410,7 @@
           '<div id="err" class="err" style="margin-bottom:12px"></div>' +
           '<button class="btn" id="go" style="width:100%">保存并继续</button>' +
         '</div>' +
+        '<div class="hint" style="margin-top:22px;text-align:center;opacity:.5;font-size:11px">build v3 · 2026-11-03</div>' +
       '</div>';
 
     $("#go").onclick = function () {
@@ -560,7 +592,12 @@
   function renderStory() {
     var box = $("#story");
     if (!box) return;
-    box.innerHTML = S.entries.filter(function (e) { return !e.hidden; }).map(entryHtml).join("") + streamHtml();
+    var visible = S.entries.filter(function (e) { return !e.hidden; });
+    if (!visible.length) {
+      box.innerHTML = '<div class="entry sys">这一局还没有剧情。<br>点下面的按钮重新开始，或刷新页面。</div>';
+      return;
+    }
+    box.innerHTML = visible.map(entryHtml).join("") + streamHtml();
     box.scrollTop = box.scrollHeight;
   }
 
@@ -611,6 +648,16 @@
       };
       return;
     }
+    if (!S.entries.length) {
+      box.innerHTML = '<button class="choice" id="fresh"><span class="n">✦</span>重新开始这一世</button>';
+      $("#fresh").onclick = function () {
+        store(LS_SAVE, null);
+        S.char = null; S.entries = []; S.choices = []; S.status = {}; S.npcs = {}; S.undo = null;
+        draft = null; S.view = "create"; render();
+      };
+      return;
+    }
+
     if (!S.choices.length) {
       box.innerHTML = '<button class="choice" id="cont"><span class="n">›</span>继续</button>';
       $("#cont").onclick = function () { ask(); };
