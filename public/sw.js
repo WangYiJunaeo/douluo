@@ -1,5 +1,5 @@
 // Service Worker：缓存应用外壳，让「从主屏幕打开」几乎瞬开
-const CACHE = "douluo-v5";
+const CACHE = "douluo-v6";
 const ASSETS = [
   "./",
   "./index.html",
