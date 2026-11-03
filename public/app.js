@@ -410,7 +410,7 @@
           '<div id="err" class="err" style="margin-bottom:12px"></div>' +
           '<button class="btn" id="go" style="width:100%">保存并继续</button>' +
         '</div>' +
-        '<div class="hint" style="margin-top:22px;text-align:center;opacity:.5;font-size:11px">build v3 · 2026-11-03</div>' +
+        '<div class="hint" style="margin-top:22px;text-align:center;opacity:.5;font-size:11px">build v4 · 2026-11-03</div>' +
       '</div>';
 
     $("#go").onclick = function () {
@@ -560,6 +560,7 @@
     var side = $("#side");
     if (!side) return;
     var c = S.char;
+    var pct = clamp(((c.power % 10) / 10) * 100, 0, 100);
     var ringHtml = c.rings.length
       ? c.rings.map(function (r) {
           var map = { 白: "--r1", 黄: "--r2", 紫: "--r3", 黑: "--r4", 红: "--r5", 金: "--r6" };
