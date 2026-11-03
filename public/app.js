@@ -443,7 +443,7 @@
           '想打开得更快？浏览器菜单 →「添加到主屏幕」，<br>下次点图标直接进，没有地址栏。' +
         '</div>' +
         (S.char ? '<button class="btn ghost" id="back2" style="width:100%;margin-top:16px">返回游戏（不修改 Key）</button>' : "") +
-        '<div class="hint" style="margin-top:10px;text-align:center;opacity:.45;font-size:11px">build v6 · 2026-11-03</div>' +
+        '<div class="hint" style="margin-top:10px;text-align:center;opacity:.45;font-size:11px">build v7 · 2026-11-03</div>' +
       '</div>';
 
     var b2 = $("#back2");
@@ -880,6 +880,13 @@
   /* ---------------- 启动 ---------------- */
   function boot() {
     applyTheme(store(LS_THEME) || "jin");
+    // 逃生口：网址后加 ?reset=1 可清掉本地进度，回到 Key 配置页
+    try {
+      if (/[?&]reset=1/.test(location.search || "")) {
+        store(LS_SAVE, null);
+        store(LS_SLOTS, null);
+      }
+    } catch (e) {}
     var cfg = store(LS_CFG);
     if (cfg && cfg.key) S.cfg = cfg;
     var saved = store(LS_SAVE);
